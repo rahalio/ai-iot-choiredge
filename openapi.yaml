@@ -1,0 +1,617 @@
+openapi: 3.0.3
+info:
+  title: ChoirEdge
+  version: 0.1.0
+  description: >-
+    Collaborative LAN inference orchestrator that shards vision DNNs across cameras and Pi-class hubs without cloud video upload.
+  x-product-slug: ai-iot-choiredge
+  x-source: ai-in-iot/1802.02138v3/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Sites
+    description: Venue/home site registry
+  - name: Nodes
+    description: Authenticated collaborator nodes
+  - name: ModelProfiles
+    description: Action/image model graphs
+  - name: PartitionPlans
+    description: Dynamic model partitions
+  - name: InferenceJobs
+    description: Live inference jobs
+  - name: Alerts
+    description: Local recognition alerts
+  - name: Telemetry
+    description: FPS energy and membership telemetry
+paths:
+
+  /v1/sites:
+    get:
+      operationId: listSites
+      tags: [Sites]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Sites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeSite"
+    post:
+      operationId: createSite
+      tags: [Sites]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteCreate"
+      responses:
+        "201":
+          description: Site created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeSite"
+  /v1/nodes:
+    get:
+      operationId: listCollaboratorNodes
+      tags: [Nodes]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: siteId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Collaborator nodes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeCollaboratorNode"
+    post:
+      operationId: joinChoir
+      tags: [Nodes]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollaboratorNodeJoin"
+      responses:
+        "201":
+          description: Node joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeCollaboratorNode"
+  /v1/model-profiles:
+    get:
+      operationId: listModelProfiles
+      tags: [ModelProfiles]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Model profiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeModelProfile"
+    post:
+      operationId: publishModelProfile
+      tags: [ModelProfiles]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelProfileCreate"
+      responses:
+        "201":
+          description: Profile published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeModelProfile"
+  /v1/partition-plans:
+    get:
+      operationId: listPartitionPlans
+      tags: [PartitionPlans]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: siteId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Partition plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopePartitionPlan"
+    post:
+      operationId: recomputePartition
+      tags: [PartitionPlans]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [siteId, modelProfileId]
+              properties:
+                siteId: { type: string }
+                modelProfileId: { type: string }
+      responses:
+        "201":
+          description: Partition recomputed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopePartitionPlan"
+  /v1/inference-jobs:
+    get:
+      operationId: listInferenceJobs
+      tags: [InferenceJobs]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Inference jobs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeInferenceJob"
+    post:
+      operationId: startInferenceJob
+      tags: [InferenceJobs]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InferenceJobCreate"
+      responses:
+        "201":
+          description: Job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeInferenceJob"
+  /v1/alerts:
+    get:
+      operationId: listAlerts
+      tags: [Alerts]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeAlertEvent"
+    post:
+      operationId: emitAlert
+      tags: [Alerts]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertEventCreate"
+      responses:
+        "201":
+          description: Alert emitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeAlertEvent"
+  /v1/telemetry:
+    get:
+      operationId: listTelemetry
+      tags: [Telemetry]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: siteId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Telemetry samples
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeTelemetrySample"
+    post:
+      operationId: submitTelemetry
+      tags: [Telemetry]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelemetrySample"
+      responses:
+        "202":
+          description: Telemetry accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeTelemetrySample"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+
+    Site:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { type: string, enum: [active, degraded, offline] }
+        minQuorum: { type: integer }
+        cloudVideoEgressAllowed: { type: boolean }
+    SiteCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        minQuorum: { type: integer }
+        cloudVideoEgressAllowed: { type: boolean }
+    CollaboratorNode:
+      type: object
+      required: [id, siteId, status]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        status: { type: string, enum: [joined, left, untrusted] }
+        computeClass: { type: string, enum: [pi, camera_soc, hub] }
+        attestationOk: { type: boolean }
+    CollaboratorNodeJoin:
+      type: object
+      required: [siteId, attestationToken]
+      properties:
+        siteId: { type: string }
+        attestationToken: { type: string }
+        computeClass: { type: string, enum: [pi, camera_soc, hub] }
+    ModelProfile:
+      type: object
+      required: [id, name, task]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        task: { type: string, enum: [action_recognition, image_recognition] }
+        graphHash: { type: string }
+        minNodes: { type: integer }
+    ModelProfileCreate:
+      type: object
+      required: [name, task, artifactUri]
+      properties:
+        name: { type: string }
+        task: { type: string, enum: [action_recognition, image_recognition] }
+        artifactUri: { type: string }
+        minNodes: { type: integer }
+    PartitionPlan:
+      type: object
+      required: [id, siteId, modelProfileId, status]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        modelProfileId: { type: string }
+        status: { type: string, enum: [active, recomputing, stale] }
+        shardCount: { type: integer }
+        memberNodeIds:
+          type: array
+          items: { type: string }
+    InferenceJob:
+      type: object
+      required: [id, siteId, status]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        modelProfileId: { type: string }
+        partitionPlanId: { type: string }
+        status: { type: string, enum: [running, paused, failed, completed] }
+        fps: { type: number, format: float }
+    InferenceJobCreate:
+      type: object
+      required: [siteId, modelProfileId]
+      properties:
+        siteId: { type: string }
+        modelProfileId: { type: string }
+        cameraIds:
+          type: array
+          items: { type: string }
+    AlertEvent:
+      type: object
+      required: [id, siteId, label, occurredAt]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        label: { type: string }
+        confidence: { type: number, format: float }
+        occurredAt: { type: string, format: date-time }
+        cameraId: { type: string }
+    AlertEventCreate:
+      type: object
+      required: [siteId, label, occurredAt]
+      properties:
+        siteId: { type: string }
+        label: { type: string }
+        confidence: { type: number, format: float }
+        occurredAt: { type: string, format: date-time }
+        cameraId: { type: string }
+    TelemetrySample:
+      type: object
+      required: [siteId, nodeId, fps]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        nodeId: { type: string }
+        fps: { type: number, format: float }
+        energyJoules: { type: number, format: float }
+        lanBytes: { type: integer }
+        sampledAt: { type: string, format: date-time }
+
+    DataEnvelopeSite:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/Site"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeSite:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Site"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeCollaboratorNode:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/CollaboratorNode"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeCollaboratorNode:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CollaboratorNode"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeModelProfile:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ModelProfile"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeModelProfile:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ModelProfile"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopePartitionPlan:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/PartitionPlan"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopePartitionPlan:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/PartitionPlan"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeInferenceJob:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/InferenceJob"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeInferenceJob:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/InferenceJob"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeAlertEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/AlertEvent"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeAlertEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AlertEvent"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeTelemetrySample:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/TelemetrySample"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeTelemetrySample:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/TelemetrySample"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
